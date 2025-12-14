@@ -1,0 +1,109 @@
+{
+  "finance": {
+    "critical": [
+      {"name": "CPA", "full_name": "Certified Public Accountant", "aliases": ["certified public accountant", "c.p.a.", "cpa license"]},
+      {"name": "CFA", "full_name": "Chartered Financial Analyst", "aliases": ["chartered financial analyst", "c.f.a.", "cfa charter"]},
+      {"name": "CFP", "full_name": "Certified Financial Planner", "aliases": ["certified financial planner", "c.f.p."]},
+      {"name": "CMA", "full_name": "Certified Management Accountant", "aliases": ["certified management accountant", "c.m.a."]}
+    ],
+    "valuable": [
+      {"name": "Series 7", "full_name": "General Securities Representative", "aliases": ["series 7 license", "finra series 7"]},
+      {"name": "Series 63", "full_name": "Uniform Securities Agent State Law", "aliases": ["series 63 license"]},
+      {"name": "Series 65", "full_name": "Uniform Investment Adviser Law", "aliases": ["series 65 license"]},
+      {"name": "FRM", "full_name": "Financial Risk Manager", "aliases": ["financial risk manager", "f.r.m."]},
+      {"name": "CIA", "full_name": "Certified Internal Auditor", "aliases": ["certified internal auditor", "c.i.a."]}
+    ]
+  },
+  "technology": {
+    "critical": [
+      {"name": "AWS Certified", "full_name": "Amazon Web Services Certification", "aliases": ["aws solutions architect", "aws developer", "aws sysops", "aws certified cloud practitioner"]},
+      {"name": "Google Cloud", "full_name": "Google Cloud Professional", "aliases": ["gcp certified", "google cloud certified", "gcp professional"]},
+      {"name": "Azure Certified", "full_name": "Microsoft Azure Certification", "aliases": ["azure administrator", "azure solutions architect", "azure developer"]},
+      {"name": "CISSP", "full_name": "Certified Information Systems Security Professional", "aliases": ["c.i.s.s.p.", "cissp certified"]}
+    ],
+    "valuable": [
+      {"name": "PMP", "full_name": "Project Management Professional", "aliases": ["p.m.p.", "pmp certified", "project management professional"]},
+      {"name": "Scrum Master", "full_name": "Certified Scrum Master", "aliases": ["csm", "c.s.m.", "certified scrummaster", "scrum alliance"]},
+      {"name": "ITIL", "full_name": "Information Technology Infrastructure Library", "aliases": ["itil foundation", "itil certified", "itil v4"]},
+      {"name": "CompTIA", "full_name": "CompTIA Certifications", "aliases": ["comptia a+", "comptia security+", "comptia network+"]},
+      {"name": "Kubernetes", "full_name": "Certified Kubernetes Administrator", "aliases": ["cka", "ckad", "kubernetes certification"]}
+    ]
+  },
+  "healthcare": {
+    "critical": [
+      {"name": "RN", "full_name": "Registered Nurse", "aliases": ["registered nurse", "r.n.", "nursing license"]},
+      {"name": "MD", "full_name": "Doctor of Medicine", "aliases": ["doctor of medicine", "m.d.", "medical doctor"]},
+      {"name": "NP", "full_name": "Nurse Practitioner", "aliases": ["nurse practitioner", "n.p.", "aprn"]},
+      {"name": "PA", "full_name": "Physician Assistant", "aliases": ["physician assistant", "p.a.", "pa-c"]}
+    ],
+    "valuable": [
+      {"name": "CNA", "full_name": "Certified Nursing Assistant", "aliases": ["certified nursing assistant", "c.n.a."]},
+      {"name": "HIPAA", "full_name": "HIPAA Certification", "aliases": ["hipaa certified", "hipaa compliance", "hipaa training"]},
+      {"name": "BLS", "full_name": "Basic Life Support", "aliases": ["b.l.s.", "bls certification", "basic life support"]},
+      {"name": "ACLS", "full_name": "Advanced Cardiovascular Life Support", "aliases": ["a.c.l.s.", "acls certification"]}
+    ]
+  },
+  "marketing": {
+    "critical": [
+      {"name": "Google Analytics", "full_name": "Google Analytics Certification", "aliases": ["ga certified", "google analytics iq", "ga4 certified"]},
+      {"name": "Google Ads", "full_name": "Google Ads Certification", "aliases": ["google adwords", "google ads certified", "adwords certified"]},
+      {"name": "HubSpot", "full_name": "HubSpot Certification", "aliases": ["hubspot certified", "hubspot inbound", "hubspot marketing"]}
+    ],
+    "valuable": [
+      {"name": "Facebook Blueprint", "full_name": "Meta Blueprint Certification", "aliases": ["meta certified", "facebook certified", "meta blueprint"]},
+      {"name": "Hootsuite", "full_name": "Hootsuite Social Marketing Certification", "aliases": ["hootsuite certified", "hootsuite platform"]},
+      {"name": "SEMrush", "full_name": "SEMrush Certification", "aliases": ["semrush certified", "semrush seo"]},
+      {"name": "Content Marketing", "full_name": "Content Marketing Certification", "aliases": ["content marketing institute", "cmi certified"]}
+    ]
+  },
+  "hr": {
+    "critical": [
+      {"name": "SHRM-CP", "full_name": "SHRM Certified Professional", "aliases": ["shrm cp", "shrm certified professional", "s.h.r.m.-c.p."]},
+      {"name": "SHRM-SCP", "full_name": "SHRM Senior Certified Professional", "aliases": ["shrm scp", "shrm senior certified", "s.h.r.m.-s.c.p."]},
+      {"name": "PHR", "full_name": "Professional in Human Resources", "aliases": ["p.h.r.", "phr certified", "professional in human resources"]},
+      {"name": "SPHR", "full_name": "Senior Professional in Human Resources", "aliases": ["s.p.h.r.", "sphr certified"]}
+    ],
+    "valuable": [
+      {"name": "CHRP", "full_name": "Certified Human Resources Professional", "aliases": ["c.h.r.p.", "chrp certified"]},
+      {"name": "CEBS", "full_name": "Certified Employee Benefit Specialist", "aliases": ["c.e.b.s.", "cebs certified"]},
+      {"name": "CCP", "full_name": "Certified Compensation Professional", "aliases": ["c.c.p.", "compensation certified"]}
+    ]
+  },
+  "sales": {
+    "critical": [],
+    "valuable": [
+      {"name": "Salesforce Certified", "full_name": "Salesforce Certification", "aliases": ["salesforce admin", "salesforce administrator", "salesforce consultant", "salesforce certified"]},
+      {"name": "Sandler", "full_name": "Sandler Sales Training", "aliases": ["sandler certified", "sandler trained", "sandler methodology"]},
+      {"name": "Challenger", "full_name": "Challenger Sales Certification", "aliases": ["challenger certified", "challenger methodology"]},
+      {"name": "SPIN", "full_name": "SPIN Selling Certification", "aliases": ["spin selling", "spin certified"]}
+    ]
+  },
+  "legal": {
+    "critical": [
+      {"name": "Bar Admission", "full_name": "State Bar License", "aliases": ["bar license", "licensed attorney", "bar admission", "admitted to practice"]},
+      {"name": "JD", "full_name": "Juris Doctor", "aliases": ["juris doctor", "j.d.", "law degree"]}
+    ],
+    "valuable": [
+      {"name": "LLM", "full_name": "Master of Laws", "aliases": ["ll.m.", "master of laws"]},
+      {"name": "Notary", "full_name": "Notary Public", "aliases": ["notary public", "notary commission"]},
+      {"name": "Paralegal", "full_name": "Certified Paralegal", "aliases": ["certified paralegal", "paralegal certification", "nala certified"]}
+    ]
+  },
+  "creative": {
+    "critical": [],
+    "valuable": [
+      {"name": "Adobe Certified", "full_name": "Adobe Certified Professional", "aliases": ["adobe certified expert", "adobe aca", "adobe certified associate"]},
+      {"name": "Google UX", "full_name": "Google UX Design Certificate", "aliases": ["google ux design", "google ux certified"]},
+      {"name": "Nielsen Norman", "full_name": "Nielsen Norman Group UX Certification", "aliases": ["nn/g certified", "nielsen norman certified", "nngroup certified"]}
+    ]
+  },
+  "general": {
+    "critical": [],
+    "valuable": [
+      {"name": "Six Sigma", "full_name": "Six Sigma Certification", "aliases": ["six sigma black belt", "six sigma green belt", "lean six sigma"]},
+      {"name": "Lean", "full_name": "Lean Management Certification", "aliases": ["lean certified", "lean manufacturing", "lean management"]},
+      {"name": "Agile", "full_name": "Agile Certification", "aliases": ["agile certified", "agile practitioner", "safe certified"]},
+      {"name": "ISO", "full_name": "ISO Certification", "aliases": ["iso 9001", "iso certified", "iso quality management"]}
+    ]
+  }
+}

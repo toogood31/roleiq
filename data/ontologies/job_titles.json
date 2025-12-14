@@ -1,0 +1,122 @@
+{
+  "software_engineer": {
+    "variations": ["software developer", "developer", "programmer", "software engineer", "swe", "engineer", "backend developer", "frontend developer", "full stack developer", "fullstack engineer"],
+    "level_indicators": {
+      "junior": ["junior", "associate", "entry level", "i", "1"],
+      "mid": ["mid", "ii", "2"],
+      "senior": ["senior", "sr", "iii", "3", "staff"],
+      "lead": ["lead", "principal", "architect", "iv", "4"],
+      "executive": ["vp", "director", "head of", "chief"]
+    }
+  },
+  "product_manager": {
+    "variations": ["product manager", "pm", "product owner", "po", "technical product manager", "tpm"],
+    "level_indicators": {
+      "junior": ["associate", "apm", "junior", "entry level"],
+      "mid": ["product manager", "pm"],
+      "senior": ["senior", "sr", "spm"],
+      "lead": ["lead", "principal", "group pm", "gpm"],
+      "executive": ["vp", "director", "head of", "chief product officer", "cpo"]
+    }
+  },
+  "account_executive": {
+    "variations": ["account executive", "ae", "sales representative", "sales rep", "business development representative", "bdr", "sales associate", "sales consultant"],
+    "level_indicators": {
+      "junior": ["associate", "junior", "bdr", "sdr", "sales development rep"],
+      "mid": ["account executive", "ae", "sales rep"],
+      "senior": ["senior", "sr", "enterprise ae"],
+      "lead": ["lead", "principal", "strategic ae"],
+      "executive": ["vp sales", "director sales", "head of sales", "chief revenue officer", "cro"]
+    }
+  },
+  "accountant": {
+    "variations": ["accountant", "staff accountant", "accounting associate", "general accountant", "bookkeeper"],
+    "level_indicators": {
+      "junior": ["staff accountant", "junior", "associate", "entry level"],
+      "mid": ["accountant", "senior staff accountant"],
+      "senior": ["senior accountant", "sr accountant", "accounting manager"],
+      "lead": ["lead accountant", "principal accountant", "accounting supervisor"],
+      "executive": ["controller", "vp finance", "director accounting", "cfo", "chief financial officer"]
+    }
+  },
+  "financial_analyst": {
+    "variations": ["financial analyst", "finance analyst", "business analyst", "fp&a analyst", "financial planning analyst"],
+    "level_indicators": {
+      "junior": ["junior", "associate", "analyst i", "entry level"],
+      "mid": ["financial analyst", "analyst ii"],
+      "senior": ["senior", "sr", "analyst iii"],
+      "lead": ["lead", "principal", "manager"],
+      "executive": ["vp", "director", "head of fp&a"]
+    }
+  },
+  "marketing_manager": {
+    "variations": ["marketing manager", "digital marketing manager", "brand manager", "marketing specialist", "marketing coordinator", "growth manager"],
+    "level_indicators": {
+      "junior": ["coordinator", "associate", "specialist", "junior"],
+      "mid": ["manager", "marketing manager"],
+      "senior": ["senior manager", "sr manager"],
+      "lead": ["lead", "principal", "group manager"],
+      "executive": ["vp marketing", "director marketing", "cmo", "chief marketing officer"]
+    }
+  },
+  "data_scientist": {
+    "variations": ["data scientist", "machine learning engineer", "ml engineer", "data analyst", "analytics engineer", "research scientist"],
+    "level_indicators": {
+      "junior": ["junior", "associate", "data analyst", "entry level"],
+      "mid": ["data scientist", "ml engineer"],
+      "senior": ["senior", "sr", "senior data scientist"],
+      "lead": ["lead", "principal", "staff", "research scientist"],
+      "executive": ["vp", "director", "head of data science", "chief data officer"]
+    }
+  },
+  "project_manager": {
+    "variations": ["project manager", "program manager", "delivery manager", "scrum master", "agile coach", "pmo"],
+    "level_indicators": {
+      "junior": ["junior", "associate", "coordinator", "entry level"],
+      "mid": ["project manager", "pm"],
+      "senior": ["senior", "sr", "senior pm"],
+      "lead": ["lead", "principal", "program manager"],
+      "executive": ["vp", "director pmo", "head of delivery"]
+    }
+  },
+  "hr_manager": {
+    "variations": ["hr manager", "human resources manager", "people manager", "talent manager", "recruiter", "hr business partner", "hrbp"],
+    "level_indicators": {
+      "junior": ["hr coordinator", "recruiter", "hr associate", "junior"],
+      "mid": ["hr manager", "hrbp", "talent acquisition manager"],
+      "senior": ["senior hr manager", "sr hrbp"],
+      "lead": ["lead", "principal", "head of talent"],
+      "executive": ["vp hr", "director hr", "chro", "chief people officer"]
+    }
+  },
+  "customer_success_manager": {
+    "variations": ["customer success manager", "csm", "account manager", "customer success associate", "client success manager"],
+    "level_indicators": {
+      "junior": ["associate", "junior", "coordinator"],
+      "mid": ["customer success manager", "csm"],
+      "senior": ["senior", "sr", "senior csm"],
+      "lead": ["lead", "principal", "enterprise csm"],
+      "executive": ["vp customer success", "director cs", "head of customer success"]
+    }
+  },
+  "designer": {
+    "variations": ["designer", "ux designer", "ui designer", "product designer", "graphic designer", "visual designer", "ux/ui designer"],
+    "level_indicators": {
+      "junior": ["junior", "associate", "entry level"],
+      "mid": ["designer", "ux designer", "product designer"],
+      "senior": ["senior", "sr", "senior designer"],
+      "lead": ["lead", "principal", "staff designer", "design lead"],
+      "executive": ["vp design", "director design", "head of design", "chief design officer"]
+    }
+  },
+  "operations_manager": {
+    "variations": ["operations manager", "ops manager", "operations coordinator", "business operations", "operations analyst"],
+    "level_indicators": {
+      "junior": ["coordinator", "associate", "analyst", "junior"],
+      "mid": ["operations manager", "ops manager"],
+      "senior": ["senior", "sr", "senior ops manager"],
+      "lead": ["lead", "principal", "director operations"],
+      "executive": ["vp operations", "coo", "chief operating officer"]
+    }
+  }
+}

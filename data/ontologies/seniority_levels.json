@@ -1,0 +1,6 @@
+{
+  "junior": ["junior", "entry-level", "associate", "intern"],
+  "mid": ["mid-level", "experienced", "specialist", "analyst"],
+  "senior": ["senior", "lead", "principal", "architect"],
+  "exec": ["director", "vp", "cto", "cfo", "ceo"]
+}

@@ -1,0 +1,38 @@
+# Analytics logs
+logs/
+*.log
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+
+# Environments
+.env
+.venv
+env/
+venv/
+workalign_env/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# Temp files
+temp_*
+*.tmp
+
+# OS
+.DS_Store
+Thumbs.db
+
+# PDF reports
+analysis_report.pdf
+
+# User uploaded files (keep folders but ignore contents)
+Job Descriptions/
+Resume/
