@@ -1,9 +1,9 @@
 import re
 import fitz  # PyMuPDF for PDF
 from docx import Document  # For DOCX
-import spacy
+from utils.model_cache import load_spacy_model
 
-nlp = spacy.load("en_core_web_lg")
+nlp = load_spacy_model()
 
 def clean_text(text):
     text = re.sub(r'\s+', ' ', text.lower().strip())

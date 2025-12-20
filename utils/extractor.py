@@ -1,12 +1,12 @@
-import spacy
 import json
 import re
 import pandas as pd
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import util
 from datetime import datetime
+from utils.model_cache import load_spacy_model, load_sentence_transformer
 
-nlp = spacy.load("en_core_web_lg")
-model = SentenceTransformer('stsb-roberta-large')
+nlp = load_spacy_model()
+model = load_sentence_transformer()
 
 # Industry classification keywords
 INDUSTRY_KEYWORDS = {

@@ -1,4 +1,5 @@
-from sentence_transformers import SentenceTransformer, util
+from sentence_transformers import util
+from utils.model_cache import load_sentence_transformer
 from utils.extractor import load_seniority_levels, load_ontology, extract_skills, extract_seniority, detect_industry, nlp
 from utils.parser import parse_document, clean_text, extract_sections
 from utils.llm_validator import validate_gaps_with_llm
@@ -37,7 +38,7 @@ from utils.analyzers import (
 import os
 import re
 
-model = SentenceTransformer('stsb-roberta-large')
+model = load_sentence_transformer()
 
 def get_embeddings(texts):
     return model.encode(texts, convert_to_tensor=True)
