@@ -1,5 +1,5 @@
 streamlit==1.51.0
-spacy==3.8.5
+spacy==3.8.11
 en_core_web_lg @ https://github.com/explosion/spacy-models/releases/download/en_core_web_lg-3.8.0/en_core_web_lg-3.8.0-py3-none-any.whl#sha256=293e9547a655b25499198ab15a525b05b9407a75f10255e405e8c3854329ab63
 sentence-transformers==5.1.2
 PyMuPDF==1.26.6
