@@ -35,6 +35,22 @@ from utils.analyzers import (
     validate_education_requirements,
     validate_years_experience
 )
+from utils.field_mismatch_detector import (
+    detect_field_mismatch,
+    apply_scoring_penalties
+)
+from utils.semantic_matcher import semantic_skill_coverage
+from utils.skill_taxonomy import match_with_hierarchy
+from utils.role_level_classifier import (
+    classify_role_level,
+    adjust_match_score,
+    extract_soft_skills,
+    extract_technical_skills
+)
+from utils.transferable_skills import (
+    calculate_transferable_coverage,
+    identify_career_change_readiness
+)
 import os
 import re
 
@@ -44,9 +60,65 @@ def get_embeddings(texts):
     return model.encode(texts, convert_to_tensor=True)
 
 def compute_score(resume_embs, jd_embs, weights=[0.4, 0.3, 0.2, 0.1]):
+    """
+    Calculate semantic similarity score based on text embeddings.
+    This is now just one component of the final score.
+    """
     scores = [util.cos_sim(resume_embs[i], jd_embs[i])[0][0].item() for i in range(len(weights))]
     total_score = sum(s * w for s, w in zip(scores, weights)) * 100
     return total_score
+
+def compute_hybrid_score(resume_skills, jd_skills, matches, similar, resume_years, jd_years,
+                        semantic_score, resume_industries, jd_industries):
+    """
+    Compute a hybrid score that balances:
+    - Skills matching (50%): Direct + similar matches
+    - Experience alignment (25%): Years requirement
+    - Semantic similarity (15%): Text similarity
+    - Field alignment (10%): Industry match
+
+    This replaces pure semantic scoring to better reflect actual qualifications.
+    """
+    # 1. SKILLS COMPONENT (50 points possible)
+    if len(jd_skills) > 0:
+        direct_match_rate = len(matches) / len(jd_skills)
+        similar_match_rate = len(similar) / len(jd_skills)
+        # Direct matches: full credit, similar matches: 50% credit
+        skills_score = (direct_match_rate * 1.0 + similar_match_rate * 0.5) * 50
+        skills_score = min(skills_score, 50)  # Cap at 50
+    else:
+        skills_score = 25  # Neutral score if no skills listed
+
+    # 2. EXPERIENCE COMPONENT (25 points possible)
+    if jd_years > 0:
+        years_ratio = min(resume_years / jd_years, 1.5)  # Cap at 150% to avoid over-rewarding
+        experience_score = years_ratio * 25
+        experience_score = min(experience_score, 25)  # Cap at 25
+    else:
+        experience_score = 12.5  # Neutral score if no experience requirement
+
+    # 3. SEMANTIC SIMILARITY (15 points possible)
+    # Scale the 0-100 semantic score to 0-15
+    semantic_component = (semantic_score / 100) * 15
+
+    # 4. FIELD ALIGNMENT (10 points possible)
+    field_score = 0
+    if resume_industries and jd_industries:
+        # Check if any resume industry matches any JD industry
+        # Industries are tuples: [('compensation', 5), ('hr', 3)]
+        resume_set = set([ind[0].lower() for ind in resume_industries])  # Extract industry name
+        jd_set = set([ind[0].lower() for ind in jd_industries])  # Extract industry name
+        if resume_set & jd_set:  # Intersection
+            field_score = 10  # Full points for industry match
+        else:
+            field_score = 5  # Partial points for related fields
+    else:
+        field_score = 5  # Neutral if industry not detected
+
+    # TOTAL SCORE (out of 100)
+    total = skills_score + experience_score + semantic_component + field_score
+
+    return min(total, 100)  # Ensure we don't exceed 100
 
 def analyze_seniority(resume_seniority, jd_seniority):
     points = []
@@ -87,9 +159,44 @@ def analyze_competencies(resume_skills, jd_skills, model):
         if ontology_match in gaps:
             gaps.remove(ontology_match)
 
+    # Hierarchical matching: Use skill taxonomy for abbreviations and parent/child relationships
+    # This catches: "React" → "JavaScript frameworks", "ML" → "Machine Learning", etc.
+    hierarchy_matched, hierarchy_explanations = match_with_hierarchy(
+        remaining_resume - partial_matches,
+        gaps
+    )
+    for hierarchy_match in hierarchy_matched:
+        matches.add(hierarchy_match)
+        if hierarchy_match in gaps:
+            gaps.remove(hierarchy_match)
+
     # Third pass: semantic similarity for remaining gaps
     remaining_resume = remaining_resume - partial_matches
-    similar = [s for s in remaining_resume if any(util.cos_sim(model.encode(s), model.encode(g))[0][0].item() > 0.55 for g in gaps)]  # Lowered from 0.7 to 0.55
+
+    # PERFORMANCE FIX: Batch encode all skills at once instead of N×M individual calls
+    # Previous: model.encode(s) and model.encode(g) for every combination = O(n*m) calls
+    # Now: One batch encode for resume skills, one for gaps = O(2) calls
+    similar = []
+    if remaining_resume and gaps:
+        remaining_list = list(remaining_resume)
+        gaps_list = list(gaps)
+
+        # Batch encode all at once
+        all_skills = remaining_list + gaps_list
+        all_embeddings = model.encode(all_skills)
+
+        # Split embeddings back into resume vs gaps
+        resume_embs = all_embeddings[:len(remaining_list)]
+        gaps_embs = all_embeddings[len(remaining_list):]
+
+        # Compute similarity matrix efficiently
+        for i, r_skill in enumerate(remaining_list):
+            for j, g_skill in enumerate(gaps_list):
+                sim = util.cos_sim(resume_embs[i], gaps_embs[j])[0][0].item()
+                if sim > 0.50:  # Threshold for semantic similarity
+                    similar.append(r_skill)
+                    break  # Found a match, move to next resume skill
+
     points = []
     points.append(f"Direct matches: {len(matches)} skills overlap (e.g., {', '.join(list(matches)[:2]) if matches else 'none'}) - {'Similar: Strong core alignment' if matches else 'Different: No overlap - action: Add JD skills'}.")
     points.append(f"Gaps: {len(gaps)} skills missing (e.g., {', '.join(list(gaps)[:2]) if gaps else 'none'}) - {'Different: Add to resume' if gaps else 'Similar: No gaps'} - action: Include examples for gaps.")
@@ -141,9 +248,11 @@ def sentence_level_matching(resume_text, jd_text, identified_gaps, model):
     if not resume_bullets or not jd_bullets:
         return []  # Can't perform comparison
 
-    # Encode all bullets
-    resume_embs = model.encode(resume_bullets)
-    jd_embs = model.encode(jd_bullets)
+    # Encode all bullets in a single batch for efficiency
+    all_bullets = resume_bullets + jd_bullets
+    all_embs = model.encode(all_bullets)
+    resume_embs = all_embs[:len(resume_bullets)]
+    jd_embs = all_embs[len(resume_bullets):]
 
     # For each identified gap, check if it appears in any JD bullet
     # and if that JD bullet has high similarity to any resume bullet
@@ -184,15 +293,16 @@ def sentence_level_matching(resume_text, jd_text, identified_gaps, model):
 
     return false_positive_gaps
 
-def analyze_business_context(resume_text, jd_text, model):
-    doc_resume = nlp(resume_text)
-    doc_jd = nlp(jd_text)
+def analyze_business_context(resume_text, jd_text, model, resume_doc=None, jd_doc=None):
+    # Use pre-computed docs if available, otherwise create them
+    doc_resume = resume_doc if resume_doc is not None else nlp(resume_text)
+    doc_jd = jd_doc if jd_doc is not None else nlp(jd_text)
     resume_context = [ent.text.lower() for ent in doc_resume.ents if ent.label_ in ["ORG", "NORP", "GPE", "PRODUCT"]]
     jd_context = [ent.text.lower() for ent in doc_jd.ents if ent.label_ in ["ORG", "NORP", "GPE", "PRODUCT"]]
     matches = set(resume_context) & set(jd_context)
-    resume_emb = model.encode(resume_text)
-    jd_emb = model.encode(jd_text)
-    context_sim = util.cos_sim(resume_emb, jd_emb)[0][0].item() * 100
+    # Batch encode both texts in a single call
+    embeddings = model.encode([resume_text, jd_text])
+    context_sim = util.cos_sim(embeddings[0], embeddings[1])[0][0].item() * 100
     points = []
     points.append(f"Context similarity: {context_sim:.2f}% - {'Similar: Good industry match' if context_sim > 70 else 'Different: Partial alignment - action: Adjust resume'}.")
     points.append(f"Shared entities: {len(matches)} common (e.g., {', '.join(list(matches)[:2]) if matches else 'none'}) - {'Similar: Common background' if matches else 'Different: No shared - action: Add relevant details'}.")
@@ -259,6 +369,7 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
 
     # Main processing with error handling
     try:
+        # Stage 1: Initial extraction
         # Detect industries for both resume and JD
         resume_industries = detect_industry(resume_text)
         jd_industries = detect_industry(jd_text)
@@ -268,13 +379,41 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
         resume_skills = extract_skills(resume_text, load_ontology(ontology_path))
         jd_skills = extract_skills(jd_text, load_ontology(ontology_path))
         resume_seniority = extract_seniority(resume_sections['experience'], load_seniority_levels(seniority_path))
-        jd_seniority = extract_seniority(jd_sections['experience'], load_seniority_levels(seniority_path))
-        resume_embs = get_embeddings([' '.join(resume_sections.get(k, [])) for k in ["skills", "experience", "education", "other"]])
-        jd_embs = get_embeddings([' '.join(jd_sections.get(k, [])) for k in ["skills", "experience", "education", "other"]])
-        score = compute_score(resume_embs, jd_embs)
+        # FIX: For JDs, pass full text split into lines instead of just experience section
+        # JDs have years requirement in QUALIFICATIONS, not an "experience" section
+        # extract_seniority expects a list of lines, not a single string
+        jd_seniority = extract_seniority(jd_text.split('\n'), load_seniority_levels(seniority_path))
+
+        # Stage 2: Embeddings
+        # Batch resume and JD embeddings into a single call for efficiency
+        section_keys = ["skills", "experience", "education", "other"]
+        resume_texts = [' '.join(resume_sections.get(k, [])) for k in section_keys]
+        jd_texts = [' '.join(jd_sections.get(k, [])) for k in section_keys]
+        all_embeddings = get_embeddings(resume_texts + jd_texts)
+        resume_embs = all_embeddings[:4]
+        jd_embs = all_embeddings[4:]
+
+        # Calculate semantic similarity score (old method - now just one component)
+        semantic_score = compute_score(resume_embs, jd_embs)
+
+        # Stage 3: Competency analysis
         seniority_points = analyze_seniority(resume_seniority, jd_seniority)
         comp_analysis = analyze_competencies(resume_skills, jd_skills, model)
 
+        # Calculate new hybrid score that incorporates skills, experience, semantic similarity, and field alignment
+        score = compute_hybrid_score(
+            resume_skills,
+            jd_skills,
+            comp_analysis['matches'],
+            comp_analysis['similar'],
+            resume_seniority['years'],
+            jd_seniority.get('years', jd_seniority.get('min_years', 0)),  # Handle both formats
+            semantic_score,
+            resume_industries,
+            jd_industries
+        )
+
+        # Stage 4: Sentence-level matching
         # Apply sentence-level matching to filter out false positive gaps
         initial_gaps = comp_analysis['gaps']
         false_positive_gaps = sentence_level_matching(resume_text, jd_text, initial_gaps, model)
@@ -295,14 +434,21 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
         comp_analysis['gaps'] = validated_gaps
         comp_analysis['matches'].extend(llm_recovered_matches)
 
-        context_points = analyze_business_context(resume_text, jd_text, model)
+        # Stage 5: NLP doc creation
+        # Create NLP docs once and reuse across all analyzers (performance optimization)
+        resume_doc = nlp(resume_text)
+        jd_doc = nlp(jd_text)
+
+        # Stage 6: All analyzers
+        context_points = analyze_business_context(resume_text, jd_text, model, resume_doc=resume_doc, jd_doc=jd_doc)
         role_fit_points = seniority_points + comp_analysis['points'] + context_points # Combine for 4-5+ bullets
 
         # NEW: Run free enhancement analyzers
+
         resume_achievements = extract_achievements(resume_text)
-        resume_verb_analysis = analyze_action_verbs(resume_text, nlp)
-        resume_leadership = detect_leadership_language(resume_text, nlp)
-        resume_task_outcome = classify_task_vs_outcome(resume_text, nlp)
+        resume_verb_analysis = analyze_action_verbs(resume_text, nlp, doc=resume_doc)
+        resume_leadership = detect_leadership_language(resume_text, nlp, doc=resume_doc)
+        resume_task_outcome = classify_task_vs_outcome(resume_text, nlp, doc=resume_doc)
 
         # Cluster skills to improve matching
         resume_skill_clusters = cluster_skills(resume_skills, model)
@@ -315,21 +461,22 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
         section_scores = score_resume_sections(resume_sections, jd_skills, nlp)
         skill_redundancies = detect_skill_redundancies(resume_skills, model)
         skill_categorization = classify_hard_vs_soft_skills(comp_analysis['gaps'])
-        gap_context = extract_skill_context(resume_text, jd_text, comp_analysis['gaps'], model, nlp)
+        gap_context = extract_skill_context(resume_text, jd_text, comp_analysis['gaps'], model, nlp, resume_doc=resume_doc, jd_doc=jd_doc)
 
         # Tier 3 analyzers
-        experience_progression = analyze_experience_progression(resume_text, nlp)
+        experience_progression = analyze_experience_progression(resume_text, nlp, doc=resume_doc)
         skill_cooccurrence = analyze_skill_cooccurrence(resume_skills, jd_skills, comp_analysis['gaps'])
-        readability = calculate_readability_score(resume_text, nlp)
+        readability = calculate_readability_score(resume_text, nlp, doc=resume_doc)
         scope_analysis = infer_scope_level(resume_text, jd_text)
-        consistency_check = check_consistency(resume_text, nlp)
+        consistency_check = check_consistency(resume_text, nlp, doc=resume_doc)
 
         # Tier 4 analyzers
         gap_severity = score_gap_severity(comp_analysis['gaps'], jd_text)
-        skill_evidence = assess_skill_evidence(resume_text, resume_skills, nlp)
+        skill_evidence = assess_skill_evidence(resume_text, resume_skills, nlp, doc=resume_doc)
         keyword_placement = analyze_keyword_placement(resume_text, jd_skills)
-        bullet_quality = score_resume_bullets(resume_text, nlp)
+        bullet_quality = score_resume_bullets(resume_text, nlp, doc=resume_doc)
 
+        # Stage 7: Final validators
         # Ontology-based enhancements
         # Determine primary industry for certification detection
         primary_industry = jd_industries[0] if jd_industries else None
@@ -339,14 +486,76 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
         education_validation = validate_education_requirements(resume_text, jd_text)
         experience_validation = validate_years_experience(resume_seniority['years'], jd_text)
 
+        # Semantic skill coverage analysis (supplement to exact matching)
+        semantic_coverage = semantic_skill_coverage(
+            resume_skills,
+            jd_skills,
+            set(comp_analysis['matches']),
+            threshold=0.7
+        )
+
+        # PRIORITY 2 ENHANCEMENTS: Role Level Classification
+        resume_role_level, resume_role_confidence = classify_role_level(resume_text)
+        jd_role_level, jd_role_confidence = classify_role_level(jd_text)
+
+        # Extract technical vs soft skills
+        resume_technical = extract_technical_skills(resume_skills)
+        resume_soft = extract_soft_skills(resume_skills)
+        jd_technical = extract_technical_skills(jd_skills)
+        jd_soft = extract_soft_skills(jd_skills)
+
+        # Calculate technical and soft skill match percentages
+        technical_matches = len(set(comp_analysis['matches']) & jd_technical)
+        soft_skill_matches = len(set(comp_analysis['matches']) & jd_soft)
+        technical_match_pct = (technical_matches / len(jd_technical) * 100) if jd_technical else 0
+        soft_skills_match_pct = (soft_skill_matches / len(jd_soft) * 100) if jd_soft else 0
+
+        # PRIORITY 2 ENHANCEMENTS: Transferable Skills Mapping
+        transferable_coverage = calculate_transferable_coverage(
+            resume_skills,
+            jd_skills,
+            set(comp_analysis['matches'])
+        )
+
+        # Calculate career change readiness
+        exact_match_pct = (len(comp_analysis['matches']) / len(jd_skills) * 100) if jd_skills else 0
+        career_change_readiness = identify_career_change_readiness(
+            resume_skills,
+            jd_skills,
+            exact_match_pct
+        )
+
+        # CRITICAL FIX: Detect field mismatches and apply scoring penalties
+        field_mismatch = detect_field_mismatch(resume_industries, jd_industries, resume_text, jd_text)
+        scoring_adjustments = apply_scoring_penalties(score, field_mismatch, education_validation, experience_validation)
+
+        # Use adjusted score, then apply role level adjustment
+        base_score = scoring_adjustments['adjusted_score']
+
+        # Adjust score based on role level alignment
+        role_adjusted_score, role_explanation = adjust_match_score(
+            base_score,
+            resume_role_level,
+            jd_role_level,
+            technical_match_pct,
+            soft_skills_match_pct
+        )
+
+        final_score = role_adjusted_score
+
         return {
-        "score": score,
+        "score": final_score,
+        "original_score": scoring_adjustments['original_score'],
+        "scoring_penalties": scoring_adjustments['penalties_applied'],
+        "field_mismatch": field_mismatch,
         "role_fit_points": role_fit_points,
-        "comp_details": {
+        "competency_details": {
             'matches': comp_analysis['matches'],
             'gaps': comp_analysis['gaps'],
             'similar': comp_analysis['similar']
         },
+        "resume_seniority": resume_seniority,
+        "jd_seniority": jd_seniority,
         "seniority_analysis": ' '.join(seniority_points),
         "comp_analysis": comp_analysis['analysis'],
         "industries": {
@@ -384,8 +593,33 @@ def match_resume_jd(resume_file, jd_file_or_text, ontology_path, seniority_path)
             'certification_gaps': certification_gaps,
             # Beta-critical validators
             'education_validation': education_validation,
-            'experience_validation': experience_validation
-        }
+            'experience_validation': experience_validation,
+            # Semantic matching supplement
+            'semantic_coverage': semantic_coverage,
+            # PRIORITY 2 ENHANCEMENTS: Role Level & Transferable Skills
+            'role_level_analysis': {
+                'resume_role_level': resume_role_level,
+                'resume_role_confidence': resume_role_confidence,
+                'jd_role_level': jd_role_level,
+                'jd_role_confidence': jd_role_confidence,
+                'role_level_explanation': role_explanation,
+                'technical_skills': {
+                    'resume': list(resume_technical),
+                    'jd': list(jd_technical),
+                    'match_percentage': round(technical_match_pct, 1)
+                },
+                'soft_skills': {
+                    'resume': list(resume_soft),
+                    'jd': list(jd_soft),
+                    'match_percentage': round(soft_skills_match_pct, 1)
+                }
+            },
+            'transferable_skills': transferable_coverage,
+            'career_change_readiness': career_change_readiness
+        },
+        # JD data for analytics/saving
+        "jd_content": jd_text,
+        "jd_skills_extracted": list(jd_skills)
     }
 
     except Exception as e:

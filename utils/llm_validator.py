@@ -10,6 +10,13 @@ def validate_gaps_with_llm(resume_text, jd_text, identified_gaps, identified_mat
         - validated_gaps: List of gaps that are truly missing
         - recovered_matches: List of "gaps" that are actually present (false positives)
     """
+    # TEMPORARILY DISABLED: LLM validation being too aggressive
+    # Re-enable by setting ENABLE_LLM_VALIDATION=true in environment
+    enable_llm = os.environ.get('ENABLE_LLM_VALIDATION', 'false').lower() == 'true'
+
+    if not enable_llm:
+        return identified_gaps, []
+
     # Check if API key is available
     api_key = os.environ.get('ANTHROPIC_API_KEY')
 

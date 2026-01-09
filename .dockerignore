@@ -1,0 +1,48 @@
+# Git
+.git
+.gitignore
+
+# Python
+__pycache__
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment and secrets
+.env
+.env.*
+*.env
+firebase-service-account.json
+*-service-account*.json
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Documentation
+*.md
+!requirements.txt
+
+# Misc
+.DS_Store
+Thumbs.db
+*.log
+
+# Backups
+*_backup/
+_pages_backup/
+
+# Large files that are downloaded during build
+*.whl

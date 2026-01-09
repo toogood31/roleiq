@@ -36,3 +36,7 @@ analysis_report.pdf
 # User uploaded files (keep folders but ignore contents)
 Job Descriptions/
 Resume/
+
+# Firebase credentials
+firebase-service-account.json
+*.json.bak

@@ -1,5 +1,26 @@
-def generate_suggestions(gaps, similar, seniority_analysis, matches, score, industries=None, enhanced_analysis=None):
+def generate_suggestions(gaps, similar, seniority_analysis, matches, score, industries=None, enhanced_analysis=None, field_mismatch=None):
     """Generate executive-style suggestions with narrative summary and detailed guidance."""
+
+    # CRITICAL: Check for field mismatch FIRST - don't recommend impossible skills
+    # If there's a CRITICAL field mismatch, provide career pivot guidance instead
+    if field_mismatch and field_mismatch.get('severity') == 'CRITICAL':
+        explanation = field_mismatch.get('explanation', 'Significant field mismatch detected.')
+
+        # Provide career transition guidance instead of skill recommendations
+        summary = f"This role is in a different professional field than your background. {explanation}"
+
+        optimization_points = [
+            "This role requires a fundamentally different professional background. Consider roles that better align with your current expertise.",
+            "If you're looking to transition fields, consider roles that bridge your current background with the target field (e.g., hybrid positions, consulting, or project management roles).",
+            "Build foundational knowledge in the target field through certifications, courses, or volunteer work before applying to specialized roles.",
+            "Focus your job search on positions where your transferable skills (leadership, communication, problem-solving) are the primary requirements."
+        ]
+
+        return {
+            'summary': summary,
+            'optimization_points': optimization_points[:4],
+            'industries': industries
+        }
 
     # Generate executive summary
     summary_parts = []
@@ -60,22 +81,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
             optimization_points.append(
                 f"Rephrase your experience with {', '.join(top_similar[:2])} to use terminology that more closely matches the job description requirements."
             )
-
-    # DEBUG: Print Tier 4 data to diagnose why recommendations aren't showing
-    if enhanced_analysis:
-        print("\n=== TIER 4 DEBUG ===")
-        gap_severity_debug = enhanced_analysis.get('gap_severity', [])
-        print(f"Gap Severity Data: {gap_severity_debug}")
-
-        skill_evidence_debug = enhanced_analysis.get('skill_evidence', [])
-        print(f"Skill Evidence Data: {skill_evidence_debug[:3] if skill_evidence_debug else 'None'}")
-
-        keyword_placement_debug = enhanced_analysis.get('keyword_placement', {})
-        print(f"Keyword Placement Keys: {keyword_placement_debug.keys() if keyword_placement_debug else 'None'}")
-
-        bullet_quality_debug = enhanced_analysis.get('bullet_quality', {})
-        print(f"Bullet Quality Data: weak_count={bullet_quality_debug.get('weak_count', 0)}, avg_score={bullet_quality_debug.get('avg_score', 0)}")
-        print("===================\n")
 
     # Add seniority-specific guidance (enhanced with verb analysis and leadership signals)
     if enhanced_analysis:
@@ -223,7 +228,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
         if gap_severity and len(gap_severity) > 0:
             # Get critical and high priority gaps
             critical_gaps = [g for g in gap_severity if g['severity'] in ['CRITICAL', 'HIGH']]
-            print(f"DEBUG: Found {len(critical_gaps)} critical/high gaps out of {len(gap_severity)} total gaps")
             if critical_gaps:
                 # Focus on top critical gap with specific context
                 top_gap = critical_gaps[0]
@@ -238,42 +242,36 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
 
                 rec = f"PRIORITY: Add '{gap_name}' - this critical skill ({detail}). Provide specific example demonstrating this capability."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added gap severity recommendation (TIER 4): {rec[:80]}...")
 
         # Tier 4: Skill evidence recommendations (identify weak skill claims)
         skill_evidence = enhanced_analysis.get('skill_evidence', [])
         if skill_evidence and len(skill_evidence) > 0:
             # Get skills with weak evidence
             weak_evidence = [s for s in skill_evidence if s['quality'] == 'WEAK']
-            print(f"DEBUG: Found {len(weak_evidence)} weak evidence skills out of {len(skill_evidence)} total skills")
             if weak_evidence:
                 # Pick first weak skill
                 weak_skill = weak_evidence[0]
                 skill_name = weak_skill['skill']
                 rec = f"Strengthen '{skill_name}' claim - currently only listed without examples. Add specific project where you used this skill with quantified results."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added skill evidence recommendation (TIER 4): {rec[:80]}...")
 
         # Tier 4: Keyword placement recommendations (flag buried keywords)
         keyword_placement = enhanced_analysis.get('keyword_placement', {})
         if keyword_placement:
             buried = keyword_placement.get('buried_critical', [])
             bottom_third = keyword_placement.get('bottom_third', [])
-            print(f"DEBUG: Keyword placement - buried={len(buried) if buried else 0}, bottom_third={len(bottom_third) if bottom_third else 0}")
 
             if buried and len(buried) > 0:
                 # Flag first buried critical keyword
                 buried_skill = buried[0]
                 rec = f"Move '{buried_skill}' higher in resume - currently buried in bottom third where ATS may miss it. Add to summary or top third of experience section."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added keyword placement recommendation (TIER 4): {rec[:80]}...")
             elif bottom_third and len(bottom_third) > 1:
                 # General placement recommendation
                 first_skill = bottom_third[0]['skill']
                 position = bottom_third[0]['position_pct']
                 rec = f"Improve keyword visibility - '{first_skill}' appears at {position:.0f}% through resume. Move important skills to top 30% for better ATS scoring."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added keyword placement recommendation (TIER 4): {rec[:80]}...")
 
         # Tier 4: Bullet quality recommendations (specific rewrites)
         bullet_quality = enhanced_analysis.get('bullet_quality', {})
@@ -281,7 +279,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
             weak_count = bullet_quality.get('weak_count', 0)
             avg_score = bullet_quality.get('avg_score', 0)
             bullet_scores = bullet_quality.get('bullet_scores', [])
-            print(f"DEBUG: Bullet quality - weak_count={weak_count}, avg_score={avg_score}, threshold check: {weak_count >= 3 and avg_score < 5.5}")
 
             if weak_count >= 3 and avg_score < 5.5:
                 # Get weakest bullet
@@ -293,7 +290,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
                         primary_issue = issues[0]
                         rec = f"Rewrite {weak_count} weak bullets - example issue: {primary_issue}. Transform task statements into achievement statements with metrics."
                         tier4_points.append(rec)
-                        print(f"DEBUG: Added bullet quality recommendation (TIER 4): {rec[:80]}...")
 
         # Ontology: Certification gap recommendations (dealbreaker alerts)
         certification_gaps = enhanced_analysis.get('certification_gaps', {})
@@ -302,8 +298,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
             missing_valuable = certification_gaps.get('missing_valuable', [])
             has_certifications = certification_gaps.get('has_certifications', False)
 
-            print(f"DEBUG: Certification gaps - critical={len(missing_critical)}, valuable={len(missing_valuable)}, has_certs={has_certifications}")
-
             # Critical certifications are potential dealbreakers
             if missing_critical:
                 for cert in missing_critical[:2]:  # Top 2 critical certifications
@@ -311,7 +305,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
                     cert_full = cert['full_name']
                     rec = f"DEALBREAKER: Job requires {cert_name} ({cert_full}) certification not found in resume. Add this credential or explain equivalent experience."
                     tier4_points.append(rec)
-                    print(f"DEBUG: Added critical certification gap (TIER 4): {rec[:80]}...")
 
             # Valuable certifications are competitive advantages
             elif missing_valuable and not has_certifications:
@@ -321,7 +314,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
                 cert_full = top_valuable['full_name']
                 rec = f"Consider adding {cert_name} ({cert_full}) certification - highly valued for this role and would strengthen your candidacy."
                 optimization_points.append(rec)  # Lower priority than Tier 4
-                print(f"DEBUG: Added valuable certification suggestion: {rec[:80]}...")
 
         # Beta-critical: Education validation recommendations
         education_validation = enhanced_analysis.get('education_validation', {})
@@ -331,14 +323,11 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
             field_gap = education_validation.get('field_of_study_gap')
             gpa_gap = education_validation.get('gpa_gap')
 
-            print(f"DEBUG: Education validation - severity={severity}, degree_gap={degree_gap is not None}, field_gap={field_gap is not None}")
-
             if degree_gap and severity == 'DEALBREAKER':
                 required_degree = degree_gap['required']
                 found_degree = degree_gap['found']
                 rec = f"DEALBREAKER: Job requires {required_degree.upper()} degree - resume shows {found_degree}. This may disqualify your application."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added education dealbreaker (TIER 4): {rec[:80]}...")
             elif degree_gap and severity == 'WARNING':
                 required_degree = degree_gap['required']
                 rec = f"Job prefers {required_degree.upper()} degree. Consider highlighting equivalent experience or ongoing education to compensate."
@@ -348,7 +337,6 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
                 required_field = field_gap['required_field']
                 rec = f"DEALBREAKER: Job requires {required_field.title()} background. Emphasize relevant coursework, projects, or self-study in this field."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added field of study dealbreaker (TIER 4): {rec[:80]}...")
 
             if gpa_gap:
                 required_gpa = gpa_gap['required']
@@ -369,13 +357,10 @@ def generate_suggestions(gaps, similar, seniority_analysis, matches, score, indu
             resume_years = experience_validation.get('resume_years')
             overqualified = experience_validation.get('overqualified')
 
-            print(f"DEBUG: Experience validation - severity={severity}, meets_min={meets_minimum}, required={min_required}, resume={resume_years}")
-
             if not meets_minimum and severity == 'DEALBREAKER':
                 gap = min_required - resume_years
-                rec = f"DEALBREAKER [v5-FIXED]: Job requires {min_required}+ years experience - resume shows {resume_years} years ({gap} year gap). This is a significant barrier."
+                rec = f"DEALBREAKER: Job requires {min_required}+ years experience - resume shows {resume_years} years ({gap} year gap). This is a significant barrier."
                 tier4_points.append(rec)
-                print(f"DEBUG: Added experience dealbreaker (TIER 4): {rec[:80]}...")
             elif not meets_minimum and severity == 'WARNING':
                 rec = f"Resume shows {resume_years} years vs {min_required}+ required. Emphasize depth of impact and advanced responsibilities to compensate."
                 optimization_points.append(rec)

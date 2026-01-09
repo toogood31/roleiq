@@ -48,12 +48,13 @@ def extract_achievements(text):
     return achievements
 
 
-def analyze_action_verbs(text, nlp):
+def analyze_action_verbs(text, nlp, doc=None):
     """
     Analyze strength of action verbs used
     Categorizes by seniority level
     """
-    doc = nlp(text)
+    if doc is None:
+        doc = nlp(text)
 
     # Verb strength categories
     weak_verbs = {
@@ -241,11 +242,12 @@ def generate_ats_recommendations(coverage_pct, missing_important, underrepresent
     return recommendations
 
 
-def detect_leadership_language(text, nlp):
+def detect_leadership_language(text, nlp, doc=None):
     """
     Identify leadership signals in text
     """
-    doc = nlp(text)
+    if doc is None:
+        doc = nlp(text)
     text_lower = text.lower()
 
     signals = {
@@ -320,11 +322,12 @@ def detect_leadership_language(text, nlp):
     }
 
 
-def classify_task_vs_outcome(text, nlp):
+def classify_task_vs_outcome(text, nlp, doc=None):
     """
     Classify resume bullets as task-oriented vs outcome-oriented
     """
-    doc = nlp(text)
+    if doc is None:
+        doc = nlp(text)
     sentences = [sent.text.strip() for sent in doc.sents]
 
     classifications = []
@@ -660,7 +663,7 @@ def classify_hard_vs_soft_skills(skills):
     return categorized
 
 
-def extract_skill_context(resume_text, jd_text, gaps, model, nlp):
+def extract_skill_context(resume_text, jd_text, gaps, model, nlp, resume_doc=None, jd_doc=None):
     """
     For each gap, extract surrounding context from JD and closest match from resume
     Helps validate whether gaps are real or false positives
@@ -669,8 +672,10 @@ def extract_skill_context(resume_text, jd_text, gaps, model, nlp):
         return {}
 
     # Split texts into sentences
-    resume_doc = nlp(resume_text)
-    jd_doc = nlp(jd_text)
+    if resume_doc is None:
+        resume_doc = nlp(resume_text)
+    if jd_doc is None:
+        jd_doc = nlp(jd_text)
 
     resume_sentences = [sent.text.strip() for sent in resume_doc.sents]
     jd_sentences = [sent.text.strip() for sent in jd_doc.sents]
@@ -721,12 +726,13 @@ def extract_skill_context(resume_text, jd_text, gaps, model, nlp):
 
 # ==================== TIER 3 ENHANCEMENTS ====================
 
-def analyze_experience_progression(resume_text, nlp):
+def analyze_experience_progression(resume_text, nlp, doc=None):
     """
     Analyze career trajectory and progression over time
     Detects: promotions, scope increases, career gaps, lateral moves
     """
-    doc = nlp(resume_text)
+    if doc is None:
+        doc = nlp(resume_text)
 
     # Extract job titles and dates
     job_entries = []
@@ -854,12 +860,13 @@ def analyze_skill_cooccurrence(resume_skills, jd_skills, gaps):
     return missing_complementary[:3]  # Top 3
 
 
-def calculate_readability_score(resume_text, nlp):
+def calculate_readability_score(resume_text, nlp, doc=None):
     """
     Analyze writing quality and professionalism
     Measures: readability, passive voice, jargon density, sentence length
     """
-    doc = nlp(resume_text)
+    if doc is None:
+        doc = nlp(resume_text)
     sentences = list(doc.sents)
 
     if not sentences:
@@ -1002,12 +1009,13 @@ def infer_scope_level(resume_text, jd_text):
     }
 
 
-def check_consistency(resume_text, nlp):
+def check_consistency(resume_text, nlp, doc=None):
     """
     Detect inconsistencies and contradictions in resume
     Checks: title vs responsibilities, claimed seniority vs evidence
     """
-    doc = nlp(resume_text)
+    if doc is None:
+        doc = nlp(resume_text)
     issues = []
 
     # Extract job titles
@@ -1152,7 +1160,7 @@ def score_gap_severity(gaps, jd_text):
     return gap_scores
 
 
-def assess_skill_evidence(resume_text, resume_skills, nlp):
+def assess_skill_evidence(resume_text, resume_skills, nlp, doc=None):
     """
     For each skill claimed in resume, assess quality of evidence (1-10)
     Strong evidence: specific examples, metrics, outcomes
@@ -1161,7 +1169,8 @@ def assess_skill_evidence(resume_text, resume_skills, nlp):
     if not resume_skills:
         return []
 
-    doc = nlp(resume_text)
+    if doc is None:
+        doc = nlp(resume_text)
     sentences = [sent.text for sent in doc.sents]
 
     skill_evidence_scores = []
@@ -1307,13 +1316,14 @@ def analyze_keyword_placement(resume_text, jd_skills):
     return placement_analysis
 
 
-def score_resume_bullets(resume_text, nlp):
+def score_resume_bullets(resume_text, nlp, doc=None):
     """
     Score each resume bullet/sentence on 1-10 scale
     Factors: strong verb, quantification, outcome language, specificity
     Returns: scored bullets with specific improvement suggestions
     """
-    doc = nlp(resume_text)
+    if doc is None:
+        doc = nlp(resume_text)
     sentences = [sent for sent in doc.sents if len(sent.text.split()) >= 5]  # Filter short sentences
 
     bullet_scores = []
